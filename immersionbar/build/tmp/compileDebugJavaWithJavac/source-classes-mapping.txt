@@ -1,0 +1,58 @@
+com/gyf/immersionbar/ImmersionBar.java
+ com.gyf.immersionbar.ImmersionBar
+ com.gyf.immersionbar.ImmersionBar$1
+ com.gyf.immersionbar.ImmersionBar$2
+com/gyf/immersionbar/SpecialBarFontUtils.java
+ com.gyf.immersionbar.SpecialBarFontUtils
+com/gyf/immersionbar/ImmersionCallback.java
+ com.gyf.immersionbar.ImmersionCallback
+com/gyf/immersionbar/BarParams.java
+ com.gyf.immersionbar.BarParams
+com/gyf/immersionbar/BuildConfig.java
+ com.gyf.immersionbar.BuildConfig
+com/gyf/immersionbar/RequestManagerRetriever.java
+ com.gyf.immersionbar.RequestManagerRetriever
+ com.gyf.immersionbar.RequestManagerRetriever$1
+ com.gyf.immersionbar.RequestManagerRetriever$Holder
+com/gyf/immersionbar/OnKeyboardListener.java
+ com.gyf.immersionbar.OnKeyboardListener
+com/gyf/immersionbar/FitsKeyboard.java
+ com.gyf.immersionbar.FitsKeyboard
+com/gyf/immersionbar/BarConfig.java
+ com.gyf.immersionbar.BarConfig
+com/gyf/immersionbar/EMUI3NavigationBarObserver.java
+ com.gyf.immersionbar.EMUI3NavigationBarObserver
+ com.gyf.immersionbar.EMUI3NavigationBarObserver$1
+ com.gyf.immersionbar.EMUI3NavigationBarObserver$NavigationBarObserverInstance
+com/gyf/immersionbar/NotchCallback.java
+ com.gyf.immersionbar.NotchCallback
+com/gyf/immersionbar/OnNavigationBarListener.java
+ com.gyf.immersionbar.OnNavigationBarListener
+com/gyf/immersionbar/BarHide.java
+ com.gyf.immersionbar.BarHide
+com/gyf/immersionbar/GestureUtils.java
+ com.gyf.immersionbar.GestureUtils
+ com.gyf.immersionbar.GestureUtils$GestureBean
+com/gyf/immersionbar/SupportRequestManagerFragment.java
+ com.gyf.immersionbar.SupportRequestManagerFragment
+com/gyf/immersionbar/OnBarListener.java
+ com.gyf.immersionbar.OnBarListener
+com/gyf/immersionbar/OSUtils.java
+ com.gyf.immersionbar.OSUtils
+com/gyf/immersionbar/NavigationBarType.java
+ com.gyf.immersionbar.NavigationBarType
+com/gyf/immersionbar/Constants.java
+ com.gyf.immersionbar.Constants
+com/gyf/immersionbar/NavigationBarObserver.java
+ com.gyf.immersionbar.NavigationBarObserver
+ com.gyf.immersionbar.NavigationBarObserver$1
+ com.gyf.immersionbar.NavigationBarObserver$NavigationBarObserverInstance
+com/gyf/immersionbar/BarProperties.java
+ com.gyf.immersionbar.BarProperties
+com/gyf/immersionbar/ImmersionDelegate.java
+ com.gyf.immersionbar.ImmersionDelegate
+com/gyf/immersionbar/NotchUtils.java
+ com.gyf.immersionbar.NotchUtils
+ com.gyf.immersionbar.NotchUtils$1
+com/gyf/immersionbar/RequestManagerFragment.java
+ com.gyf.immersionbar.RequestManagerFragment
