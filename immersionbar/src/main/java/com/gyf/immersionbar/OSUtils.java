@@ -158,10 +158,7 @@ public class OSUtils {
      */
     public static boolean isEMUI3_1() {
         String property = getEMUIVersion();
-        if ("EmotionUI 3".equals(property) || property.contains("EmotionUI_3.1")) {
-            return true;
-        }
-        return false;
+        return "EmotionUI 3".equals(property) || property.contains("EmotionUI_3.1");
     }
 
     /**

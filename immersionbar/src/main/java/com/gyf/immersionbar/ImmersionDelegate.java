@@ -3,10 +3,10 @@ package com.gyf.immersionbar;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.res.Configuration;
-import android.os.Build;
+import android.view.Surface;
+
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import android.view.Surface;
 
 /**
  * @author geyifeng
@@ -85,7 +85,7 @@ class ImmersionDelegate implements Runnable {
      * @param configuration the configuration
      */
     private void barChanged(Configuration configuration) {
-        if (mImmersionBar != null && mImmersionBar.initialized() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        if (mImmersionBar != null && mImmersionBar.initialized()) {
             mOnBarListener = mImmersionBar.getBarParams().onBarListener;
             if (mOnBarListener != null) {
                 final Activity activity = mImmersionBar.getActivity();

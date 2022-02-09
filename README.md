@@ -27,7 +27,7 @@ allprojects {
 
 ```
 dependencies {
-    implementation 'com.github.jousen:ImmersionBar:3.0'
+    implementation 'com.github.jousen:ImmersionBar:3.1'
 }
 ```
 

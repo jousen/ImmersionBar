@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -25,9 +26,9 @@ import java.util.Map;
  */
 class RequestManagerRetriever implements Handler.Callback {
 
-    private String mTag = ImmersionBar.class.getName();
+    private final String mTag = ImmersionBar.class.getName();
 
-    private Handler mHandler;
+    private final Handler mHandler;
 
     private static final int ID_REMOVE_FRAGMENT_MANAGER = 1;
     private static final int ID_REMOVE_SUPPORT_FRAGMENT_MANAGER = 2;

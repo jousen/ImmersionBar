@@ -1,5 +1,16 @@
 package com.gyf.immersionbar;
 
+import static com.gyf.immersionbar.Constants.FLAG_FITS_DEFAULT;
+import static com.gyf.immersionbar.Constants.FLAG_FITS_STATUS;
+import static com.gyf.immersionbar.Constants.FLAG_FITS_SYSTEM_WINDOWS;
+import static com.gyf.immersionbar.Constants.FLAG_FITS_TITLE;
+import static com.gyf.immersionbar.Constants.FLAG_FITS_TITLE_MARGIN_TOP;
+import static com.gyf.immersionbar.Constants.IMMERSION_BOUNDARY_COLOR;
+import static com.gyf.immersionbar.Constants.IMMERSION_NAVIGATION_BAR_DARK_MIUI;
+import static com.gyf.immersionbar.Constants.IMMERSION_NAVIGATION_BAR_VIEW_ID;
+import static com.gyf.immersionbar.Constants.IMMERSION_STATUS_BAR_DARK_MIUI;
+import static com.gyf.immersionbar.Constants.IMMERSION_STATUS_BAR_VIEW_ID;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
@@ -11,7 +22,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -25,6 +35,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -32,17 +45,6 @@ import androidx.fragment.app.Fragment;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import static com.gyf.immersionbar.Constants.FLAG_FITS_DEFAULT;
-import static com.gyf.immersionbar.Constants.FLAG_FITS_STATUS;
-import static com.gyf.immersionbar.Constants.FLAG_FITS_SYSTEM_WINDOWS;
-import static com.gyf.immersionbar.Constants.FLAG_FITS_TITLE;
-import static com.gyf.immersionbar.Constants.FLAG_FITS_TITLE_MARGIN_TOP;
-import static com.gyf.immersionbar.Constants.IMMERSION_BOUNDARY_COLOR;
-import static com.gyf.immersionbar.Constants.IMMERSION_NAVIGATION_BAR_DARK_MIUI;
-import static com.gyf.immersionbar.Constants.IMMERSION_NAVIGATION_BAR_VIEW_ID;
-import static com.gyf.immersionbar.Constants.IMMERSION_STATUS_BAR_DARK_MIUI;
-import static com.gyf.immersionbar.Constants.IMMERSION_STATUS_BAR_VIEW_ID;
 
 /**
  * android 4.4以上沉浸式以及bar的管理
@@ -53,7 +55,7 @@ import static com.gyf.immersionbar.Constants.IMMERSION_STATUS_BAR_VIEW_ID;
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public final class ImmersionBar implements ImmersionCallback {
 
-    private Activity mActivity;
+    private final Activity mActivity;
     private Fragment mSupportFragment;
     private android.app.Fragment mFragment;
     private Dialog mDialog;
@@ -105,7 +107,7 @@ public final class ImmersionBar implements ImmersionCallback {
     /**
      * 用户使用tag增加的bar参数的集合
      */
-    private Map<String, BarParams> mTagMap = new HashMap<>();
+    private final Map<String, BarParams> mTagMap = new HashMap<>();
     /**
      * 当前顶部布局和状态栏重叠是以哪种方式适配的
      */
@@ -249,7 +251,7 @@ public final class ImmersionBar implements ImmersionCallback {
      * 通过上面配置后初始化后方可成功调用
      */
     public void init() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && mBarParams.barEnable) {
+        if (mBarParams.barEnable) {
             //更新Bar的参数
             updateBarParams();
             //设置沉浸式
@@ -294,7 +296,7 @@ public final class ImmersionBar implements ImmersionCallback {
 
     void onConfigurationChanged(Configuration newConfig) {
         updateBarConfig();
-        if (OSUtils.isEMUI3_x() || Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+        if (OSUtils.isEMUI3_x()) {
             if (mInitialized && !mIsFragment && mBarParams.navigationBarWithKitkatEnable) {
                 init();
             } else {
@@ -311,21 +313,19 @@ public final class ImmersionBar implements ImmersionCallback {
      */
     private void updateBarParams() {
         adjustDarkModeParams();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            //获得Bar相关信息
-            if (!mInitialized || mIsFragment) {
-                updateBarConfig();
+        //获得Bar相关信息
+        if (!mInitialized || mIsFragment) {
+            updateBarConfig();
+        }
+        if (mParentBar != null) {
+            //如果在Fragment中使用，让Activity同步Fragment的BarParams参数
+            if (mIsFragment) {
+                mParentBar.mBarParams = mBarParams;
             }
-            if (mParentBar != null) {
-                //如果在Fragment中使用，让Activity同步Fragment的BarParams参数
-                if (mIsFragment) {
-                    mParentBar.mBarParams = mBarParams;
-                }
-                //如果dialog里设置了keyboardEnable为true，则Activity中所设置的keyboardEnable为false
-                if (mIsDialog) {
-                    if (mParentBar.mKeyboardTempEnable) {
-                        mParentBar.mBarParams.keyboardEnable = false;
-                    }
+            //如果dialog里设置了keyboardEnable为true，则Activity中所设置的keyboardEnable为false
+            if (mIsDialog) {
+                if (mParentBar.mKeyboardTempEnable) {
+                    mParentBar.mBarParams.keyboardEnable = false;
                 }
             }
         }
@@ -337,7 +337,7 @@ public final class ImmersionBar implements ImmersionCallback {
     void setBar() {
         //防止系统栏隐藏时内容区域大小发生变化
         int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && !OSUtils.isEMUI3_x()) {
+        if (!OSUtils.isEMUI3_x()) {
             //适配刘海屏
             fitsNotchScreen();
             //初始化5.0以上，包含5.0
@@ -346,17 +346,30 @@ public final class ImmersionBar implements ImmersionCallback {
             uiFlags = setStatusBarDarkFont(uiFlags);
             //android 8.0以上设置导航栏图标为暗色
             uiFlags = setNavigationIconDark(uiFlags);
+            //适配android 11以上
+            setBarDarkFont();
         } else {
             //初始化5.0以下，4.4以上沉浸式
             initBarBelowLOLLIPOP();
         }
         //隐藏状态栏或者导航栏
-        uiFlags = hideBar(uiFlags);
+        uiFlags = hideBarBelowR(uiFlags);
+        //应用flag
         mDecorView.setSystemUiVisibility(uiFlags);
+        //适配小米和魅族状态栏黑白
         setSpecialBarDarkMode();
+        //适配android 11以上
+        hideBarAboveR();
         //导航栏显示隐藏监听，目前只支持带有导航栏的华为和小米手机
         if (mBarParams.onNavigationBarListener != null) {
             NavigationBarObserver.getInstance().register(mActivity.getApplication());
+        }
+    }
+
+    private void setBarDarkFont() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            setStatusBarDarkFontAboveR();
+            setNavigationIconDarkAboveR();
         }
     }
 
@@ -546,70 +559,45 @@ public final class ImmersionBar implements ImmersionCallback {
      * @param uiFlags the ui flags
      * @return the int
      */
-    private int hideBar(int uiFlags) {
+    private int hideBarBelowR(int uiFlags) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowInsetsController controller = mContentView.getWindowInsetsController();
-            switch (mBarParams.barHide) {
-                case FLAG_HIDE_BAR:
-                    controller.hide(WindowInsets.Type.statusBars());
-                    controller.hide(WindowInsets.Type.navigationBars());
-                    break;
-                case FLAG_HIDE_STATUS_BAR:
-                    controller.hide(WindowInsets.Type.statusBars());
-                    break;
-                case FLAG_HIDE_NAVIGATION_BAR:
-                    controller.hide(WindowInsets.Type.navigationBars());
-                    break;
-                case FLAG_SHOW_BAR:
-                    controller.show(WindowInsets.Type.statusBars());
-                    controller.show(WindowInsets.Type.navigationBars());
-                    break;
-                default:
-                    break;
-            }
-            controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             return uiFlags;
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            switch (mBarParams.barHide) {
-                case FLAG_HIDE_BAR:
-                    uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.INVISIBLE;
-                    break;
-                case FLAG_HIDE_STATUS_BAR:
-                    uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.INVISIBLE;
-                    break;
-                case FLAG_HIDE_NAVIGATION_BAR:
-                    uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-                    break;
-                case FLAG_SHOW_BAR:
-                    uiFlags |= View.SYSTEM_UI_FLAG_VISIBLE;
-                    break;
-                default:
-                    break;
-            }
-            return uiFlags | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-        } else {
-            return uiFlags | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         }
+        switch (mBarParams.barHide) {
+            case FLAG_HIDE_BAR:
+                uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.INVISIBLE;
+                break;
+            case FLAG_HIDE_STATUS_BAR:
+                uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.INVISIBLE;
+                break;
+            case FLAG_HIDE_NAVIGATION_BAR:
+                uiFlags |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+                break;
+            case FLAG_SHOW_BAR:
+                uiFlags |= View.SYSTEM_UI_FLAG_VISIBLE;
+                break;
+            default:
+                break;
+        }
+        return uiFlags | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     }
 
     /**
      * 修正界面显示
      */
     private void fitsWindows() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && !OSUtils.isEMUI3_x()) {
-                //android 5.0以上解决状态栏和布局重叠问题
-                fitsWindowsAboveLOLLIPOP();
-            } else {
-                //android 5.0以下解决状态栏和布局重叠问题
-                fitsWindowsBelowLOLLIPOP();
-            }
-            //适配状态栏与布局重叠问题
-            fitsLayoutOverlap();
+        if (!OSUtils.isEMUI3_x()) {
+            //android 5.0以上解决状态栏和布局重叠问题
+            fitsWindowsAboveLOLLIPOP();
+        } else {
+            //android 5.0以下解决状态栏和布局重叠问题
+            fitsWindowsBelowLOLLIPOP();
         }
+        //适配状态栏与布局重叠问题
+        fitsLayoutOverlap();
     }
 
     /**
@@ -693,7 +681,6 @@ public final class ImmersionBar implements ImmersionCallback {
                     right = mBarConfig.getNavigationBarWidth();
                 }
             }
-
         }
         setPadding(0, top, right, bottom);
     }
@@ -775,26 +762,14 @@ public final class ImmersionBar implements ImmersionCallback {
      * 设置状态栏字体颜色，android6.0以上
      */
     private int setStatusBarDarkFont(int uiFlags) {
-        if (mBarParams.statusBarDarkFont) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = mContentView.getWindowInsetsController();
-                controller.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-                return uiFlags;
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (mBarParams.statusBarDarkFont) {
                 return uiFlags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             } else {
                 return uiFlags;
             }
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = mContentView.getWindowInsetsController();
-                controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-                return uiFlags;
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return uiFlags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            } else {
-                return uiFlags;
-            }
+            return uiFlags;
         }
     }
 
@@ -803,27 +778,80 @@ public final class ImmersionBar implements ImmersionCallback {
      * Sets dark navigation icon.
      */
     private int setNavigationIconDark(int uiFlags) {
-        if (mBarParams.navigationBarDarkIcon) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = mContentView.getWindowInsetsController();
-                controller.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
-                return uiFlags;
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (mBarParams.navigationBarDarkIcon) {
                 return uiFlags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
             } else {
                 return uiFlags;
             }
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = mContentView.getWindowInsetsController();
-                controller.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
-                return uiFlags;
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return uiFlags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            } else {
-                return uiFlags;
+            return uiFlags;
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private void setStatusBarDarkFontAboveR() {
+        WindowInsetsController windowInsetsController = mContentView.getWindowInsetsController();
+        if (mBarParams.statusBarDarkFont) {
+            if (mWindow != null) {
+                unsetSystemUiFlag(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            }
+            windowInsetsController.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        } else {
+            windowInsetsController.setSystemBarsAppearance(
+                    0,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private void setNavigationIconDarkAboveR() {
+        WindowInsetsController controller = mContentView.getWindowInsetsController();
+        if (mBarParams.navigationBarDarkIcon) {
+            controller.setSystemBarsAppearance(
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+        } else {
+            controller.setSystemBarsAppearance(
+                    0,
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+        }
+    }
+
+    private void hideBarAboveR() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsControllerCompat controller = ViewCompat.getWindowInsetsController(mContentView);
+            if (controller != null) {
+                switch (mBarParams.barHide) {
+                    case FLAG_HIDE_BAR:
+                        controller.hide(WindowInsetsCompat.Type.statusBars());
+                        controller.hide(WindowInsetsCompat.Type.navigationBars());
+                        break;
+                    case FLAG_HIDE_STATUS_BAR:
+                        controller.hide(WindowInsetsCompat.Type.statusBars());
+                        break;
+                    case FLAG_HIDE_NAVIGATION_BAR:
+                        controller.hide(WindowInsetsCompat.Type.navigationBars());
+                        break;
+                    case FLAG_SHOW_BAR:
+                        controller.show(WindowInsetsCompat.Type.statusBars());
+                        controller.show(WindowInsetsCompat.Type.navigationBars());
+                        break;
+                    default:
+                        break;
+                }
+                controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
         }
+    }
+
+    protected void unsetSystemUiFlag(int systemUiFlag) {
+        View decorView = mWindow.getDecorView();
+        decorView.setSystemUiVisibility(
+                decorView.getSystemUiVisibility()
+                        & ~systemUiFlag);
     }
 
     /**
@@ -900,29 +928,27 @@ public final class ImmersionBar implements ImmersionCallback {
      * Keyboard enable.
      */
     private void fitsKeyboard() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (!mIsFragment) {
-                if (mBarParams.keyboardEnable) {
-                    if (mFitsKeyboard == null) {
-                        mFitsKeyboard = new FitsKeyboard(this);
-                    }
-                    mFitsKeyboard.enable(mBarParams.keyboardMode);
-                } else {
-                    if (mFitsKeyboard != null) {
-                        mFitsKeyboard.disable();
-                    }
+        if (!mIsFragment) {
+            if (mBarParams.keyboardEnable) {
+                if (mFitsKeyboard == null) {
+                    mFitsKeyboard = new FitsKeyboard(this);
                 }
+                mFitsKeyboard.enable(mBarParams.keyboardMode);
             } else {
-                if (mParentBar != null) {
-                    if (mParentBar.mBarParams.keyboardEnable) {
-                        if (mParentBar.mFitsKeyboard == null) {
-                            mParentBar.mFitsKeyboard = new FitsKeyboard(mParentBar);
-                        }
-                        mParentBar.mFitsKeyboard.enable(mParentBar.mBarParams.keyboardMode);
-                    } else {
-                        if (mParentBar.mFitsKeyboard != null) {
-                            mParentBar.mFitsKeyboard.disable();
-                        }
+                if (mFitsKeyboard != null) {
+                    mFitsKeyboard.disable();
+                }
+            }
+        } else {
+            if (mParentBar != null) {
+                if (mParentBar.mBarParams.keyboardEnable) {
+                    if (mParentBar.mFitsKeyboard == null) {
+                        mParentBar.mFitsKeyboard = new FitsKeyboard(mParentBar);
+                    }
+                    mParentBar.mFitsKeyboard.enable(mParentBar.mBarParams.keyboardMode);
+                } else {
+                    if (mParentBar.mFitsKeyboard != null) {
+                        mParentBar.mFitsKeyboard.disable();
                     }
                 }
             }
@@ -1062,49 +1088,47 @@ public final class ImmersionBar implements ImmersionCallback {
      * @param view      the view
      */
     public static void setTitleBar(final Activity activity, int fixHeight, View... view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (activity == null) {
-                return;
+        if (activity == null) {
+            return;
+        }
+        if (fixHeight < 0) {
+            fixHeight = 0;
+        }
+        for (final View v : view) {
+            if (v == null) {
+                continue;
             }
-            if (fixHeight < 0) {
-                fixHeight = 0;
+            final int statusBarHeight = fixHeight;
+            Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
+            if (fitsHeight == null) {
+                fitsHeight = 0;
             }
-            for (final View v : view) {
-                if (v == null) {
-                    continue;
+            if (fitsHeight != statusBarHeight) {
+                v.setTag(R.id.immersion_fits_layout_overlap, statusBarHeight);
+                ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+                if (layoutParams == null) {
+                    layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 }
-                final int statusBarHeight = fixHeight;
-                Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
-                if (fitsHeight == null) {
-                    fitsHeight = 0;
-                }
-                if (fitsHeight != statusBarHeight) {
-                    v.setTag(R.id.immersion_fits_layout_overlap, statusBarHeight);
-                    ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
-                    if (layoutParams == null) {
-                        layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    }
-                    if (layoutParams.height == ViewGroup.LayoutParams.WRAP_CONTENT ||
-                            layoutParams.height == ViewGroup.LayoutParams.MATCH_PARENT) {
-                        final ViewGroup.LayoutParams finalLayoutParams = layoutParams;
-                        final Integer finalFitsHeight = fitsHeight;
-                        v.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                finalLayoutParams.height = v.getHeight() + statusBarHeight - finalFitsHeight;
-                                v.setPadding(v.getPaddingLeft(),
-                                        v.getPaddingTop() + statusBarHeight - finalFitsHeight,
-                                        v.getPaddingRight(),
-                                        v.getPaddingBottom());
-                                v.setLayoutParams(finalLayoutParams);
-                            }
-                        });
-                    } else {
-                        layoutParams.height += statusBarHeight - fitsHeight;
-                        v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + statusBarHeight - fitsHeight,
-                                v.getPaddingRight(), v.getPaddingBottom());
-                        v.setLayoutParams(layoutParams);
-                    }
+                if (layoutParams.height == ViewGroup.LayoutParams.WRAP_CONTENT ||
+                        layoutParams.height == ViewGroup.LayoutParams.MATCH_PARENT) {
+                    final ViewGroup.LayoutParams finalLayoutParams = layoutParams;
+                    final Integer finalFitsHeight = fitsHeight;
+                    v.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            finalLayoutParams.height = v.getHeight() + statusBarHeight - finalFitsHeight;
+                            v.setPadding(v.getPaddingLeft(),
+                                    v.getPaddingTop() + statusBarHeight - finalFitsHeight,
+                                    v.getPaddingRight(),
+                                    v.getPaddingBottom());
+                            v.setLayoutParams(finalLayoutParams);
+                        }
+                    });
+                } else {
+                    layoutParams.height += statusBarHeight - fitsHeight;
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + statusBarHeight - fitsHeight,
+                            v.getPaddingRight(), v.getPaddingBottom());
+                    v.setLayoutParams(layoutParams);
                 }
             }
         }
@@ -1158,34 +1182,32 @@ public final class ImmersionBar implements ImmersionCallback {
      * @param view      the view
      */
     public static void setTitleBarMarginTop(Activity activity, int fixHeight, View... view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (activity == null) {
-                return;
+        if (activity == null) {
+            return;
+        }
+        if (fixHeight < 0) {
+            fixHeight = 0;
+        }
+        for (View v : view) {
+            if (v == null) {
+                continue;
             }
-            if (fixHeight < 0) {
-                fixHeight = 0;
+            Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
+            if (fitsHeight == null) {
+                fitsHeight = 0;
             }
-            for (View v : view) {
-                if (v == null) {
-                    continue;
+            if (fitsHeight != fixHeight) {
+                v.setTag(R.id.immersion_fits_layout_overlap, fixHeight);
+                ViewGroup.LayoutParams lp = v.getLayoutParams();
+                if (lp == null) {
+                    lp = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 }
-                Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
-                if (fitsHeight == null) {
-                    fitsHeight = 0;
-                }
-                if (fitsHeight != fixHeight) {
-                    v.setTag(R.id.immersion_fits_layout_overlap, fixHeight);
-                    ViewGroup.LayoutParams lp = v.getLayoutParams();
-                    if (lp == null) {
-                        lp = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    }
-                    ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) lp;
-                    layoutParams.setMargins(layoutParams.leftMargin,
-                            layoutParams.topMargin + fixHeight - fitsHeight,
-                            layoutParams.rightMargin,
-                            layoutParams.bottomMargin);
-                    v.setLayoutParams(layoutParams);
-                }
+                ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) lp;
+                layoutParams.setMargins(layoutParams.leftMargin,
+                        layoutParams.topMargin + fixHeight - fitsHeight,
+                        layoutParams.rightMargin,
+                        layoutParams.bottomMargin);
+                v.setLayoutParams(layoutParams);
             }
         }
     }
@@ -1239,30 +1261,28 @@ public final class ImmersionBar implements ImmersionCallback {
      * @param view      the view
      */
     public static void setStatusBarView(Activity activity, int fixHeight, View... view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (activity == null) {
-                return;
+        if (activity == null) {
+            return;
+        }
+        if (fixHeight < 0) {
+            fixHeight = 0;
+        }
+        for (View v : view) {
+            if (v == null) {
+                continue;
             }
-            if (fixHeight < 0) {
-                fixHeight = 0;
+            Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
+            if (fitsHeight == null) {
+                fitsHeight = 0;
             }
-            for (View v : view) {
-                if (v == null) {
-                    continue;
+            if (fitsHeight != fixHeight) {
+                v.setTag(R.id.immersion_fits_layout_overlap, fixHeight);
+                ViewGroup.LayoutParams lp = v.getLayoutParams();
+                if (lp == null) {
+                    lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
                 }
-                Integer fitsHeight = (Integer) v.getTag(R.id.immersion_fits_layout_overlap);
-                if (fitsHeight == null) {
-                    fitsHeight = 0;
-                }
-                if (fitsHeight != fixHeight) {
-                    v.setTag(R.id.immersion_fits_layout_overlap, fixHeight);
-                    ViewGroup.LayoutParams lp = v.getLayoutParams();
-                    if (lp == null) {
-                        lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
-                    }
-                    lp.height = fixHeight;
-                    v.setLayoutParams(lp);
-                }
+                lp.height = fixHeight;
+                v.setLayoutParams(lp);
             }
         }
     }
@@ -1430,6 +1450,11 @@ public final class ImmersionBar implements ImmersionCallback {
         return hasNavigationBar(fragment.getActivity());
     }
 
+    @TargetApi(14)
+    public static boolean hasNavigationBar(@NonNull Context context) {
+        return getNavigationBarHeight(context) > 0;
+    }
+
     /**
      * Gets navigation bar height.
      * 获得导航栏的高度
@@ -1459,6 +1484,16 @@ public final class ImmersionBar implements ImmersionCallback {
         return getNavigationBarHeight(fragment.getActivity());
     }
 
+    @TargetApi(14)
+    public static int getNavigationBarHeight(@NonNull Context context) {
+        GestureUtils.GestureBean bean = GestureUtils.getGestureBean(context);
+        if (bean.isGesture && !bean.checkNavigation) {
+            return 0;
+        } else {
+            return BarConfig.getNavigationBarHeightInternal(context);
+        }
+    }
+
     /**
      * Gets navigation bar width.
      * 获得导航栏的宽度
@@ -1486,6 +1521,16 @@ public final class ImmersionBar implements ImmersionCallback {
             return 0;
         }
         return getNavigationBarWidth(fragment.getActivity());
+    }
+
+    @TargetApi(14)
+    public static int getNavigationBarWidth(@NonNull Context context) {
+        GestureUtils.GestureBean bean = GestureUtils.getGestureBean(context);
+        if (bean.isGesture && !bean.checkNavigation) {
+            return 0;
+        } else {
+            return BarConfig.getNavigationBarWidthInternal(context);
+        }
     }
 
     /**
@@ -1544,6 +1589,11 @@ public final class ImmersionBar implements ImmersionCallback {
             return 0;
         }
         return getStatusBarHeight(fragment.getActivity());
+    }
+
+    @TargetApi(14)
+    public static int getStatusBarHeight(@NonNull Context context) {
+        return BarConfig.getInternalDimensionSize(context, Constants.IMMERSION_STATUS_BAR_HEIGHT);
     }
 
     /**
@@ -1707,7 +1757,7 @@ public final class ImmersionBar implements ImmersionCallback {
      */
     public static boolean isGesture(android.app.Fragment fragment) {
         Context context = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             context = fragment.getContext();
         }
         if (context == null) return false;
@@ -2677,7 +2727,7 @@ public final class ImmersionBar implements ImmersionCallback {
      */
     public ImmersionBar hideBar(BarHide barHide) {
         mBarParams.barHide = barHide;
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT || OSUtils.isEMUI3_x()) {
+        if (OSUtils.isEMUI3_x()) {
             mBarParams.hideNavigationBar = (mBarParams.barHide == BarHide.FLAG_HIDE_NAVIGATION_BAR) ||
                     (mBarParams.barHide == BarHide.FLAG_HIDE_BAR);
         }

@@ -1,13 +1,13 @@
 package com.gyf.immersionbar;
 
 import android.graphics.Rect;
-import android.os.Build;
-import androidx.fragment.app.Fragment;
-import androidx.drawerlayout.widget.DrawerLayout;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
+
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 
 /**
  * 适配软键盘弹出问题
@@ -17,10 +17,10 @@ import android.widget.FrameLayout;
  */
 class FitsKeyboard implements ViewTreeObserver.OnGlobalLayoutListener {
 
-    private ImmersionBar mImmersionBar;
-    private Window mWindow;
-    private View mDecorView;
-    private View mContentView;
+    private final ImmersionBar mImmersionBar;
+    private final Window mWindow;
+    private final View mDecorView;
+    private final View mContentView;
     private View mChildView;
     private int mPaddingLeft = 0, mPaddingTop = 0, mPaddingRight = 0, mPaddingBottom = 0;
     private int mTempKeyboardHeight;
@@ -60,17 +60,15 @@ class FitsKeyboard implements ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     void enable(int mode) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            mWindow.setSoftInputMode(mode);
-            if (!mIsAddListener) {
-                mDecorView.getViewTreeObserver().addOnGlobalLayoutListener(this);
-                mIsAddListener = true;
-            }
+        mWindow.setSoftInputMode(mode);
+        if (!mIsAddListener) {
+            mDecorView.getViewTreeObserver().addOnGlobalLayoutListener(this);
+            mIsAddListener = true;
         }
     }
 
     void disable() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && mIsAddListener) {
+        if (mIsAddListener) {
             if (mChildView != null) {
                 mContentView.setPadding(mPaddingLeft, mPaddingTop, mPaddingRight, mPaddingBottom);
             } else {
@@ -83,7 +81,7 @@ class FitsKeyboard implements ViewTreeObserver.OnGlobalLayoutListener {
     }
 
     void cancel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && mIsAddListener) {
+        if (mIsAddListener) {
             mDecorView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             mIsAddListener = false;
         }

@@ -165,10 +165,7 @@ public class NotchUtils {
                 if (o != null) {
                     result = (Integer) o;
                 }
-            } catch (NoSuchMethodException ignored) {
-            } catch (IllegalAccessException ignored) {
-            } catch (InvocationTargetException ignored) {
-            } catch (ClassNotFoundException ignored) {
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException ignored) {
             }
         }
         return result == 1;
@@ -190,8 +187,6 @@ public class NotchUtils {
                 Class<?> aClass = classLoader.loadClass(NOTCH_HUA_WEI);
                 Method get = aClass.getMethod("hasNotchInScreen");
                 result = (boolean) get.invoke(aClass);
-            } catch (ClassNotFoundException ignored) {
-            } catch (NoSuchMethodException ignored) {
             } catch (Exception ignored) {
             }
         }
@@ -214,8 +209,6 @@ public class NotchUtils {
                 Class<?> aClass = classLoader.loadClass(NOTCH_VIVO);
                 Method method = aClass.getMethod("isFeatureSupport", int.class);
                 result = (boolean) method.invoke(aClass, 0x00000020);
-            } catch (ClassNotFoundException ignored) {
-            } catch (NoSuchMethodException ignored) {
             } catch (Exception ignored) {
             }
         }
@@ -377,10 +370,6 @@ public class NotchUtils {
             Class<?> aClass = cl.loadClass("com.huawei.android.util.HwNotchSizeUtil");
             Method get = aClass.getMethod("getNotchSize");
             return (int[]) get.invoke(aClass);
-        } catch (ClassNotFoundException ignored) {
-            return ret;
-        } catch (NoSuchMethodException ignored) {
-            return ret;
         } catch (Exception ignored) {
             return ret;
         }
